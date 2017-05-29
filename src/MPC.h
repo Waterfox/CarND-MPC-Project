@@ -15,6 +15,7 @@ class MPC {
   // Solve the model given an initial state and polynomial coefficients.
   // Return the first actuatotions.
 
+  //used for path visualization
   vector<double> mpc_x_;
   vector<double> mpc_y_;
   vector<double> Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs);

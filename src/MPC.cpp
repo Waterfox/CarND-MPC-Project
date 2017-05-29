@@ -6,8 +6,9 @@
 using CppAD::AD;
 
 // TODO: Set the timestep length and duration
-// size_t N = 17;
+// size_t N = 17; //test
 // double dt = 0.012;
+
 // size_t N = 20; //40mph
 // double dt = 0.05;
 
@@ -15,15 +16,6 @@ size_t N = 15; //60mph
 double dt = 0.03;
 
 
-// This value assumes the model presented in the classroom is used.
-//
-// It was obtained by measuring the radius formed by running the vehicle in the
-// simulator around in a circle with a constant steering angle and velocity on a
-// flat terrain.
-//
-// Lf was tuned until the the radius formed by the simulating the model
-// presented in the classroom matched the previous radius.
-//
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
@@ -45,6 +37,8 @@ size_t epsi_start = cte_start + N;
 size_t delta_start = epsi_start + N;
 size_t a_start = delta_start + N - 1;
 
+
+//Variables used to tune the cost function on the mpc solver
 const double coeff_cte = 300;
 const double coeff_epsi = 75;
 const double coeff_v = 5;
@@ -63,10 +57,8 @@ class FG_eval {
 
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector& fg, const ADvector& vars) {
-    // TODO: implement MPC
-    // fg a vector of constraints, x is a vector of constraints.
-    // NOTE: You'll probably go back and forth between this function and
-    // the Solver function below.
+
+    //fg[0] stores the cost, all subsequent positions store the contraints
     fg[0] = 0;
 
     // The part of the cost based on the reference state.
@@ -121,12 +113,12 @@ class FG_eval {
       AD<double> delta0 = vars[delta_start + i];
       AD<double> a0 = vars[a_start + i];
 
-      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2]*x0*x0 + coeffs[3]*x0*x0*x0; //only valid for 3d order polynomial
-      AD<double> psides0 = CppAD::atan(3.0*coeffs[3]*x0*x0 + 2.0*coeffs[2]*x0 + coeffs[1]);
+      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2]*x0*x0 + coeffs[3]*x0*x0*x0; //only valid for 3rd order polynomial
+      AD<double> psides0 = CppAD::atan(3.0*coeffs[3]*x0*x0 + 2.0*coeffs[2]*x0 + coeffs[1]); // only valid for 3rd order polynomial
       //std::cout << "x: " << x1 << " y: " << f0 << std:: endl;
 
-      // Here's `x` to get you started.
-      // The idea here is to constraint this value to be 0.
+      // Constraints tying each timestep of each variable to each other through vehicle dynamics.
+      //
       //
       // Recall the equations for the model:
       // x_[t+1] = x[t] + v[t] * cos(psi[t]) * dt
@@ -281,7 +273,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   auto cost = solution.obj_value;
   std::cout << "Cost " << cost << std::endl;
 
-
+  // use mpx_x_, y class variables to store the MPC points and get them to the main program
   for(int i = 0; i < N; i++) {
     mpc_x_[i] = solution.x[x_start + i];
     mpc_y_[i] = solution.x[y_start + i];
@@ -292,6 +284,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   //
   // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
   // creates a 2 element double vector.
+
+  //Returning the full state for observation and debug
   return {solution.x[x_start + 1],   solution.x[y_start + 1],
           solution.x[psi_start + 1], solution.x[v_start + 1],
           solution.x[cte_start + 1], solution.x[epsi_start + 1],
