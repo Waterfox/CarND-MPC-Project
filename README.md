@@ -41,7 +41,7 @@ psi_t1 = (psi_t + v_t * delta_t / Lf * dt);
 v-t1 = (v_t + a_t * dt);
 cte_t1 = ((cte_t - y_t) + (v_t *sin(epsi_t) * dt));
 epsi_t1 - ((psi_t - psides_t) + v_t * delta_t / Lf * dt);
-    ```
+```
 
 The controls were constrained to the acceptable input values for the simulator of -25..25 deg for steering and -1..1 throttle setting.
 
