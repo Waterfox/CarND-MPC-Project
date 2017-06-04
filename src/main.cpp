@@ -137,15 +137,16 @@ int main() {
 
           double t_lat = 0.1; // latency time
           double Lf = 2.67;   //turn radius
-          double delta_c = cur_steering;
+          //double delta_c = cur_steering;
+          double v_si =  v*0.447; // mph to m/s
           double a_c = cur_throttle;
 
-          double x_c = v*std::cos(delta_c)*t_lat;
+          double x_c = v_si*std::cos(psi)*t_lat;
           //x_c = 0;
-          double y_c = -v*std::sin(delta_c)*t_lat;
+          double y_c = -v_si*std::sin(psi)*t_lat;
           //y_c = 0;
-          double psi_c = -(v*delta_c*t_lat)/Lf;
-          double v_c = v + a_c*t_lat;
+          double psi_c = -(v_si*psi*t_lat)/Lf;
+          double v_c = v_si + a_c*t_lat;
           double cte = polyeval(coeffs, x_c)-y_c; // this is the position of the polynomial at x=0, used as CTE
           double epsi = -atan(3.0*coeffs[3]*x_c*x_c + 2.0*coeffs[2]*x_c + coeffs[1]);
           //double epsi = -atan(polyderiv(coeffs,x_c));
