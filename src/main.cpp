@@ -74,6 +74,7 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
   return result;
 }
 
+// **--------------------Main------------------------**
 int main() {
   uWS::Hub h;
 
@@ -106,17 +107,12 @@ int main() {
           double cur_steering = j[1]["steering_angle"];
           double cur_throttle = j[1]["throttle"];
 
-          /*
-          * TODO: Calculate steeering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-
-          */
 
           //translate trajectory to car frame
           Eigen::VectorXd ptsx_c = Eigen::VectorXd( ptsx.size() ) ;
           Eigen::VectorXd ptsy_c = Eigen::VectorXd( ptsy.size() ) ;
 
+          //store cos and sin
           const double cos_psi = std::cos(psi);
           const double sin_psi = std::sin(psi);
 
@@ -125,15 +121,18 @@ int main() {
             const double dy = ptsy[i]-py;
 
             ptsx_c[i] = (dx)*cos_psi + (dy)*1.0*sin_psi;
-            ptsy_c[i] = (dx)*-1.0*sin_psi + (dy)*cos_psi; // TODO check the rotation dirn
+            ptsy_c[i] = (dx)*-1.0*sin_psi + (dy)*cos_psi;
           }
 
           double steer_value;
           double throttle_value;
 
-          //Fit a 3rd order polynomial. Must be order 3
+          //Fit a 3rd order polynomial to the car frame trajectory. Must be order 3
           auto coeffs = polyfit(ptsx_c, ptsy_c, 3);
           //cout << "coeffs: " << coeffs <<endl;
+
+
+          //Attempt to handle latency by using vehicle kinematics to predict the state after the latency period
 
           double t_lat = 0.1; // latency time
           double Lf = 2.67;   //turn radius
@@ -151,7 +150,6 @@ int main() {
           double epsi = -atan(3.0*coeffs[3]*x_c*x_c + 2.0*coeffs[2]*x_c + coeffs[1]);
           //double epsi = -atan(polyderiv(coeffs,x_c));
 
-          //std::cout << epsi << std::endl;
 
           Eigen::VectorXd state(6);
           state << x_c, y_c, psi_c, v_c, cte, epsi;
@@ -171,8 +169,8 @@ int main() {
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
-          //steer_value = -vars[6]/deg2rad(25);
-          steer_value = -vars[6];
+          //steer_value = -vars[6]/deg2rad(25);  // This didn't work particularly well
+          steer_value = -vars[6]; // This did
           //throttle_value = 0.18;
           throttle_value = vars[7];
           //cout << "steering angle: " << steer_value << endl << "throttle: " << throttle_value << endl;
@@ -194,7 +192,7 @@ int main() {
           vector<double> next_x_vals;
           vector<double> next_y_vals;
 
-          //convert Eigen::VectorXd to vector<double> .. there is probably a better way to do this.
+          //convert Eigen::VectorXd to vector<double> .. there is probably a better way to do this. Not even sure we need to do this.
           for (int i = 0;  i < ptsx_c.size();  i++) {
             next_x_vals.push_back(ptsx_c[i]);
             next_y_vals.push_back(ptsy_c[i]);

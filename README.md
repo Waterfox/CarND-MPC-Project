@@ -1,109 +1,101 @@
 # CarND-Controls-MPC
 Self-Driving Car Engineer Nanodegree Program
-
----
-
-## Dependencies
-
-* cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-* [uWebSockets](https://github.com/uWebSockets/uWebSockets) == 0.14, but the master branch will probably work just fine
-  * Follow the instructions in the [uWebSockets README](https://github.com/uWebSockets/uWebSockets/blob/master/README.md) to get setup for your platform. You can download the zip of the appropriate version from the [releases page](https://github.com/uWebSockets/uWebSockets/releases). Here's a link to the [v0.14 zip](https://github.com/uWebSockets/uWebSockets/archive/v0.14.0.zip).
-  * If you have MacOS and have [Homebrew](https://brew.sh/) installed you can just run the ./install-mac.sh script to install this.
-* Fortran Compiler
-  * Mac: `brew install gcc` (might not be required)
-  * Linux: `sudo apt-get install gfortran`. Additionall you have also have to install gcc and g++, `sudo apt-get install gcc g++`. Look in [this Dockerfile](https://github.com/udacity/CarND-MPC-Quizzes/blob/master/Dockerfile) for more info.
-* [Ipopt](https://projects.coin-or.org/Ipopt)
-  * Mac: `brew install ipopt`
-  * Linux
-    * You will need a version of Ipopt 3.12.1 or higher. The version available through `apt-get` is 3.11.x. If you can get that version to work great but if not there's a script `install_ipopt.sh` that will install Ipopt. You just need to download the source from the Ipopt [releases page](https://www.coin-or.org/download/source/Ipopt/) or the [Github releases](https://github.com/coin-or/Ipopt/releases) page.
-    * Then call `install_ipopt.sh` with the source directory as the first argument, ex: `bash install_ipopt.sh Ipopt-3.12.1`. 
-  * Windows: TODO. If you can use the Linux subsystem and follow the Linux instructions.
-* [CppAD](https://www.coin-or.org/CppAD/)
-  * Mac: `brew install cppad`
-  * Linux `sudo apt-get install cppad` or equivalent.
-  * Windows: TODO. If you can use the Linux subsystem and follow the Linux instructions.
-* [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page). This is already part of the repo so you shouldn't have to worry about it.
-* Simulator. You can download these from the [releases tab](https://github.com/udacity/CarND-MPC-Project/releases).
-* Not a dependency but read the [DATA.md](./DATA.md) for a description of the data sent back from the simulator.
-
+Robbie Edwards May 2017 submission
 
 ## Basic Build Instructions
 
+1. Compile: `cmake .. && make`
+2. Run it: `./mpc`.
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./mpc`.
+## Video
 
-## Tips
+Here is a link to the project video at 57mph.
 
-1. It's recommended to test the MPC on basic examples to see if your implementation behaves as desired. One possible example
-is the vehicle starting offset of a straight line (reference). If the MPC implementation is correct, after some number of timesteps
-(not too many) it should find and track the reference line.
-2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
-3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=ZCe8aLxr1lk" target="_blank"><img src="http://img.youtube.com/vi/ZCe8aLxr1lk/0.jpg"
+alt="MPC at 57mph" width="240" height="180" border="10" /></a>
 
-## Editor Settings
+## Solution
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+The framework and part of the code was adapted from the Udacity MPC quiz. This provided the setup of the IPOPT optimizer including the cost function and constraints.
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+The following state variables were used with MPC, per the mpc lessons:
 
-## Code Style
+- x: x coordinate (car frame)
+- y: y coordinate (car frame)
+- psi: heading angle (car frame)
+- v: speed
+- cte: cross track error
+- error_psi: heading error
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+The controls:
 
-## Project Instructions and Rubric
+- delta: steering angle
+- a: acceleration / throttle value
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+The vehicle kinematics from the mpc course material were used as contrainst between timesteps of each variable.
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/b1ff3be0-c904-438e-aad3-2b5379f0e0c3/concepts/1a2255a0-e23c-44cf-8d41-39b8a3c8264a)
-for instructions and the project rubric.
+```c++
+x_t1 = (x_t + v_t * cos(psi_t) * dt);
+y_t1 = (y_t + v_t * sin(psi_t) * dt);
+psi_t1 = (psi_t + v_t * delta_t / Lf * dt);
+v-t1 = (v_t + a_t * dt);
+cte_t1 = ((cte_t - y_t) + (v_t *sin(epsi_t) * dt));
+epsi_t1 - ((psi_t - psides_t) + v_t * delta_t / Lf * dt);
+```
 
-## Hints!
+The controls were constrained to the acceptable input values for the simulator of -25..25 deg for steering and -1..1 throttle setting.
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
 
-## Call for IDE Profiles Pull Requests
+### Optimizer cost function
 
-Help your fellow students!
+A similar cost function to the course material was used. Weights on each cost term were used and tuned to provide accpetable driving behavior. In general, the weights were not adjusted significantly between the velocity set points which were attempted.
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+The cost function considered:
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+1. The cross track error over each predicted state / timesteps
+2. The heading error over each timesteps
+3. error from the desired velocity setpoint
+4. Use of the steering actuators
+5. Use of the throttle actuators
+6. Difference between timesteps of the steering actuator (smoothness)
+7. Difference between timesteps of the throttle actuator (smoothness)
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
+### Coordinates
 
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
+Telemtry was provided in the global coordinate frame, this was translated and rotated into the vehicle reference frame in main.cpp line 111. The optimizer and polynomial fitter were run in the vehicle reference frame coordinates.
 
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
+### Timesteps and delta_t
 
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+It was found that for a given set of cost function weights, the timestep dt could be adjusted somewhat proportionally to the vehicle velocity to acheive a roughly constant prediction distance. That is, decrease dt with increasing velocity.
+
+For a fixed speed, by decreasing dt too much, the car would become over-responsive and jittery. It would often drive off the track.
+
+By using a dt too large, the car would not be responsive enough to drive around the tighter corners.
+
+For 60mph and N = 15:
+
+ - dt = 0.005s: car too jittery, drives off course
+ - dt = 0.03s: good performance
+ - dt = 0.01s: car's initial control too slow, unresponsive, drives off course. Large variations in control output between timesteps
+
+For the number of timesteps:
+Using too few timesteps would result in a short prediction distance, with inadequate fitting. The car would often quickly drive off the track.
+
+Using too many time steps would result in the MPC predicting farther than the vehicle's telemetry as well as evaluating the fitted polynomial outside the region in which it was fit.  The car would drive off the course.
+
+For 60mph and dt = 0.03s
+
+ - N = 5: too few, car immediately drives off course
+ - N = 15-20: good performance
+ - N = 30: some overfitting / funny trajectories, car still drives course
+ - N = 50: overfitting, beyond valid polynomial, car leaves course.
+
+ The total prediction distance of N*dt*v is important to consider. It should not be longer than the telemetry.
+
+## Latency
+
+Latency was handled at main.cpp line 135 by using the vehicle kinematics in the vehicle frame of reference to adjust the mpc solver input state forward by the latency time of 100ms. This means the solver should be generating control output for when the vehicle is ready to respond to it.
+
+## Improvements
+
+This MPC implementation could benefit from much more time tuning the cost function weights as well as other parameters. Perhaps from automatic tuning of the cost function weights.  It would also be interesting to apply other terms to the cost function in future work. The vehicle dynamics could also be incorporated in place of the kinematics, but the dynamics used in the simulator would have to be known.
